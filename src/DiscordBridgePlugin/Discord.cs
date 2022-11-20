@@ -113,6 +113,7 @@
                 {
                     this._plugin.OnPluginStatusChanged(PluginStatus.Error, "Discord not running", "");
                     this._discordDetected = false;
+                    DiscordIPC.Stop();
                 }
                 else
                 {

@@ -12,7 +12,7 @@
 
     class DiscordIPC
     {
-        private static NamedPipeClientStream _client = new NamedPipeClientStream("discord-ipc-0");
+        private static NamedPipeClientStream _client;
         private static BinaryReader _reader;
         private static BinaryWriter _writer;
         private static string _clientId = "";
@@ -23,7 +23,7 @@
         private static string access_token;
         private static string refresh_token;
 
-        public static bool HasConnection() => _client.IsConnected;
+        public static bool HasConnection() => _client != null && _client.IsConnected;
 
         public static void Setup(string clientId, string clientSecret, string accessToken, string refreshToken)
         {
@@ -67,6 +67,7 @@
         {
             if (_reader == null)
             {
+                _client = new NamedPipeClientStream("discord-ipc-0");
                 _client.Connect();
                 _reader = new BinaryReader(_client);
                 _writer = new BinaryWriter(_client);
@@ -214,6 +215,25 @@
         {
             writeMessage(1, "{\"nonce\": \"" + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture) + "\", \"args\": { }, \"cmd\": \"GET_VOICE_SETTINGS\"}");
             return readMessage();
+        }
+
+        public static void Stop()
+        {
+            try
+            {
+                _client.Close();
+                _writer.Close();
+                _reader.Close();
+
+                _client = null;
+                _writer = null;
+                _reader = null;
+            }
+            catch
+            {
+                //ignored
+            }
+            
         }
     }
 }
