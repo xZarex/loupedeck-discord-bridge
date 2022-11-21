@@ -25,7 +25,7 @@
 
         protected override void RunCommand(String actionParameter)
         {
-            this.Plugin.TryGetPluginSetting("DISCORDrefresh_token", out var refresh_token);
+            this.Plugin.TryGetPluginSetting("DISCORD2refresh_token", out var refresh_token);
             if (String.IsNullOrEmpty(refresh_token))
             {
                 if (Discord.Instance.Setup(actionParameter))

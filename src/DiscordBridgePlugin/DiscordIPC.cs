@@ -91,8 +91,7 @@
                 { "client_id", _clientId },
                 { "client_secret", _clientSecret },
                 { "grant_type", "refresh_token" },
-                { "refresh_token", refresh_token },
-                { "redirect_uri", _clientRedirect },
+                { "refresh_token", refresh_token }
             };
 
             var content = new FormUrlEncodedContent(values);
@@ -149,15 +148,28 @@
         }
 
 
-        public static bool DoFullAuth()
+        public static int DoFullAuth()
         {
             try
             {
                 var webAuth = "";
                 if (string.IsNullOrEmpty(refresh_token))
                 {
-                    var authorize = Authorize();
-                    var code = authorize.Split(new string[] { "{\"code\":\"" }, StringSplitOptions.None)[1].Split('"')[0];
+                    var code = "";
+                    try
+                    {
+                        var authorize = Authorize();
+                        code =
+                            authorize.Split(new string[] {"{\"code\":\""}, StringSplitOptions.None)[1].Split('"')[0];
+                    }
+                    catch
+                    {
+                        return 0;
+                    }
+
+                    if (string.IsNullOrEmpty(code))
+                        return 0;
+                    
                     webAuth = OAuthExchange(code);
                 }
                 else
@@ -165,7 +177,7 @@
                     webAuth = OAuthRefresh();
                 }
 
-
+                
                 SetAccessToken(webAuth.Split(new string[] { "\"access_token\": \"" }, StringSplitOptions.None)[1].Split('"')[0]);
 
                 SetRefreshToken(webAuth.Split(new string[] { "\"refresh_token\": \"" }, StringSplitOptions.None)[1].Split('"')[0]);
@@ -176,15 +188,15 @@
 
                 var authenticate = Authenticate();
 
-                return true;
+                return 2;
             }
-            catch
+            catch(Exception ex)
             {
-                //ignored
+                Console.WriteLine(ex);
             }
 
 
-            return false;
+            return 1;
         }
 
         public static string Mute()
@@ -221,9 +233,10 @@
         {
             try
             {
-                _client.Close();
-                _writer.Close();
-                _reader.Close();
+
+                _client?.Close();
+                _writer?.Close();
+                _reader?.Close();
 
                 _client = null;
                 _writer = null;

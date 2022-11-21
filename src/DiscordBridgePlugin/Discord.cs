@@ -35,16 +35,17 @@
         private Boolean _isOutMuted = false;
         private Boolean _discordDetected = false;
         private Plugin _plugin = null;
+        private Boolean _isConnecting = false;
 
         private String _access_token = "";
         private String _refresh_token = "";
         private String _client_id = "";
         private String _client_secret = "";
 
-        const String accessTokenSetting = "DISCORDaccess_token";
-        const String refreshTokenSetting = "DISCORDrefresh_token";
-        const String clientIdSetting = "DISCORDclient_id";
-        const String clientSecretSetting = "DISCORDclient_secret";
+        const String accessTokenSetting = "DISCORD2access_token";
+        const String refreshTokenSetting = "DISCORD2refresh_token";
+        const String clientIdSetting = "DISCORD2client_id";
+        const String clientSecretSetting = "DISCORD2client_secret";
 
 
         public event DiscordTickEvent OnTick;
@@ -120,13 +121,15 @@
                     this._plugin.OnPluginStatusChanged(PluginStatus.Normal, "Discord running", "");
                     
 
-                    if (String.IsNullOrEmpty(this._refresh_token) == false)
+                    if (!this._isConnecting && String.IsNullOrEmpty(this._refresh_token) == false)
                     {
                         if (!DiscordIPC.HasConnection())
                         {
+                            this._isConnecting = true;
                             DiscordIPC.Setup(this._client_id, this._client_secret, this._access_token, this._refresh_token);
                             DiscordIPC.Start();
-                            if (DiscordIPC.DoFullAuth())
+                            var auth = DiscordIPC.DoFullAuth();
+                            if (auth == 2)
                             {
                                 
                                 this._access_token = DiscordIPC.GetAccessToken();
@@ -137,12 +140,19 @@
                             }
                             else
                             {
-                                this._plugin.SetPluginSetting(accessTokenSetting, "");
-                                this._plugin.SetPluginSetting(refreshTokenSetting, "");
+                                if (auth != 0)
+                                {
+                                    this._plugin.SetPluginSetting(accessTokenSetting, "");
+                                    this._plugin.SetPluginSetting(refreshTokenSetting, "");
 
-                                this._refresh_token = "";
-                                this._access_token = "";
+                                    this._refresh_token = "";
+                                    this._access_token = "";
+                                }
+
+                                DiscordIPC.Stop();
                             }
+
+                            this._isConnecting = false;
                         }
 
                         if (DiscordIPC.HasConnection())
@@ -181,7 +191,7 @@
 
                 DiscordIPC.Setup(this._client_id, this._client_secret, this._access_token, this._refresh_token);
                 DiscordIPC.Start();
-                if (DiscordIPC.DoFullAuth())
+                if (DiscordIPC.DoFullAuth() == 2)
                 {
                     this._access_token = DiscordIPC.GetAccessToken();
                     this._refresh_token = DiscordIPC.GetRefreshToken();
